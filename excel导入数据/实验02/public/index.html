@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to Database</title>
+</head>
+<body>
+    <h1>导入Excel到数据库</h1>
+    <input type="file" id="excelFile" accept=".xlsx, .xls" style="display: none;" />
+    <button onclick="document.getElementById('excelFile').click()">导入Excel</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script>
+        document.getElementById('excelFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                    // 发送数据到后端
+                    fetch('/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(json),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                        alert('导入成功！');
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert('导入失败！');
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert('请选择一个Excel文件');
+            }
+        });
+    </script>
+</body>
+</html>
